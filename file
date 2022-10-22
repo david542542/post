@@ -1,0 +1,250 @@
+Title: So many (data) formats to chose from
+Subtitle: A javascript implementation to format spreadsheet data
+Content: 
+
+*This is an edited version of the original blog post written by [Alexander Felipe](https://afelipe.hashnode.dev/show-the-data).<br/>
+The library is located at [rose-formatter](https://github.com/datadocs/rose-formatter).*
+
+# Introduction
+
+
+Nowadays any person minimally acquainted with computers will know how a spreadsheet works. And we can look back and appreciate how this impacted the generation before us.  
+
+%[https://youtu.be/kOO31qFmi9A&t=162s]
+
+It is undeniable that Microsoft Excel has been very influential in how it formats data, as shown at [2:42](https://youtu.be/kOO31qFmi9A&t=162s) in the following classic video:
+
+
+It is undeniable that Microsoft Excel was been very influential, and we are admittedly influenced by its formatting, as shown at [2:42](https://youtu.be/kOO31qFmi9A&t=162s) in the above video. Excel introduced a loose language to describe formats. It is not a formal language, and it seems most of it was developed in an unstructured way – it is documented by examples and not a formal definition of its actual behavior. But it is still quite powerful and flexible, and it provides a good fit for our needs, such as:
+
+* **Interoperability**:  the Excel data format is widely used, and if someone wants to load or export data that stores formatting information in the Excel notation, we should be able to interpret and present the data that way.
+
+* **Usability**: Many users are already acquainted with the Excel format notation, and it would be nice if they can use what they already know in new software.
+
+* **Meets universal goals**: While we have alternatives for data formatting, most of them differ only in the way strings are escaped or how different things are denoted, e.g. is month represented `%B` or `mmmm`
+
+
+## The particular case of date
+
+
+
+As happened with letters that had to be associated with an arbitrary sequence of bits, thus dates had to be as well. And since dates specify a point in time since a certain time, they can be derived from a numerical type, also known as a serial date representation.
+
+To store dates, we must establish a time unit and a reference point – for example, the modern “Gregorian” calendar uses the traditional notion of when Christ was born to establish “Year 0” – before which we have B.C., after which we have A.D.. as the reference point and has a basic time unit of years since then. Excel’s choice was to count days since 1st of January of 1900; JavaScript counts seconds since January 1st, 1970.
+
+Simple enough, right? Well, there are quite a few complexities about accurately modeling dates and times.
+
+A **leap year** is a [calendar year](https://en.wikipedia.org/wiki/Calendar_year) that contains an additional day that was introduced to better synchronize the calendar year with the astronomical year. It occurs every year that is multiple of four and not a multiple of 100, or a multiple of 400. And even with this, it is simple to get it wrong – for example, Excel incorrectly assumes the year 1900 was a leap year[*](https://learn.microsoft.com/en-US/office/troubleshoot/excel/wrongly-assumes-1900-is-leap-year).
+
+There are also situations where the clock time changes arbitrarily by political decisions, the most common being Dayling savings time. Excel does not handle that either. Actually, Excel does not even handle time zones. This could be a limitation for certain applications, but it often a design decision that is made to simplify many calculations where such precision isn’t necessary.
+
+A [leap second](https://www.timeanddate.com/time/leapseconds.html) is a one-second adjustment that is occasionally applied to [Coordinated Universal Time](https://www.timeanddate.com/time/aboututc.html) (UTC), to accommodate the difference between precise time (as measured by atomic clocks) and imprecise observed solar time. Since it is based on empirical measurements it is impossible to program a function to correctly predict future dates and time intervals. So, even though we have the ability to calculate differences between timestamps, they very well may deviate a few seconds from the actual elapsed time. For example, JavaScript’s [Date.UTC](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/UTC) is unable to handle leap seconds.
+
+
+## Existing candidates on NPM
+
+Let us review a few of the existing formatting libraries available on NPM. [formatter](https://www.npmjs.com/package/formatter) exports a functor that allows fixed-width string interpolation. [d3-time-format](https://www.npmjs.com/package/d3-time-format) is another great solution that provides fixed-width formatting according to the standard C format description format. d3-format supports the Python 3’s format specification. numeral allows the formatting numbers in various locales and formats, but does not support dates or other non-numeric types. The two best candidates we found were the following:
+
+[moment](https://www.npmjs.com/package/moment) supports many operations for date and time, and is extremely popular with over 20 million downloads per month. It has nice [formatting support](https://momentjs.com/docs/#/displaying/format/), with its own custom format, e.g. being able to format days as ordinal: `moment().format("Do [of] MMMM")` gives `2nd of October`. The package itself is quite large, coming in at close to 5 MB.
+
+[excel-style-dataformatter](https://www.npmjs.com/package/excel-style-dataformatter) Is also very good, and quite small as well. It covers many corner cases, has multilingual support, but does not fully support conditional formatting. 
+
+```javascript
+const DataFormatter = require('excel-style-dataformatter');
+const dataFormatter = new DataFormatter();
+function TEXT(value, format){
+  const type = typeof value === 'number'? 'Number': 'DateTime';
+  return dataFormatter.format(value, type, format).value;
+}
+// It works if some explicit condition is met
+console.log(TEXT(1, '[<=1]"small";"large"'))
+// But fails otherwise
+console.log(TEXT(10, '[<=1]"small";"large"'))
+// gives 2497974068071313/2500000000000000
+console.log(TEXT(1233/1234, "#/###"))
+// Gives "text", excel would give "-text"
+console.log(TEXT(-1, '"text"'))
+// Gives "1E+123" instead of "1E1-2/3 ignoring the mask for the exponent
+console.log(TEXT(1e123, "0E-0-0\\/0"))
+// Gives "3E+" istead of "3E+0"
+console.log(TEXT(3, "0E+##"))
+// Gives "123.00E+2", but the 3 leading zero indicates that it should use 
+// An exponent multiple of 3, excel gives 012.30E+3
+console.log(TEXT(12300, "000.00E+0"))
+// Interpret m as Month where it should be interpreted as minute.
+console.log(TEXT(new Date(), "s m"))
+```
+
+Some of these packages could, arguably, have been better than Excel in some respects, but at the cost of compatibility, which is one of our primary criteria.
+
+# Our approach
+
+As the examples show, each feature may have a different behavior, and these features can be combined together in numerous ways as well. Creating a fully-compatible formatting library would be an arduous task, and even mature libraries such as OpenOffice or Google Sheets will exhibit their own differences. Our focus has been to focus on the main features and allow for the package to evolve on its own.
+
+## Self-criticism
+A joke about standardization that I always tell:
+
+> When we started our research we noticed that there are `n` standards, so we created a standard that covers everything (now there are `n+1` standards).
+
+The aim of this package is to provide an implementation that can reproduce the Excel behavior as closely as possible. 
+* We know we are not yet there, but we have a robust test suite (*good enough to reveal bugs in existing libraries*).
+* We are using a parser generation tool to write code emphasizing readability and maintainability.
+* We have a well-defined format parsing output will enables developers to more easily write custom and efficient renderers.
+
+## Parsing (understanding) format
+[Parsing](https://en.wikipedia.org/wiki/Parsing) is not an easy task. An extensive literature has been dedicated to it over the years, with different algorithms created to create different types of parsers. The grammars are ranked according to some properties that measure difficulty to parse in the [Chomsky Hierarchy](https://en.wikipedia.org/wiki/Chomsky_hierarchy#The_hierarchy).
+
+## Parsing with regular expressions
+It is very common to find implementations of number formatters using string substitution, for instance in [excel-style-dataformatter](https://www.npmjs.com/package/excel-style-dataformatter). This approach requires multiple passes and requires the use of one or more state variables to determine what to use. However, a few features in the formatting are not possible to implement using only string substitution and require a more advanced approach such as regular expressions – e.g. the `AM/PM` string changes the meaning of preceding `h` symbols, though multiple `h` symbols could appear if mixed with other symbols.
+
+### Parsing with a context-free language
+A context-free language has the advantage that any time a token is seen it is possible to determine what to do with it. They can be parsed in time linear with the input size. When designing a context-free language, the language design and parser implementation are done at the same time, allowing for language decisions that ease parser development. However, if we have to parse a language defined by examples only – such as in this Excel case – this may be very difficult. This is also the case for natural language, whose understanding has taken off only recently thanks to machine learning with models that literally use billions of parameters.
+
+![As the scale of a machine learning model increases the performance across tasks improves as well, unlocking new capabilities](https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgLXCWMlipdu0gFF6hsiJHbxg1zSaEkdDWfl-8RakQuW__8RPvlOS9KGIScNCytxT4jz9isnx0GLMwbS1G0Q4WdXzT42GszgfwIIAVX1H3J-43lVWWqcb--q9cPsxCsJFFz2dRfpKgEmLe-xfIyBqQuPq1BPYcK9CtAK1_xnhgvgAAx0GeZmODJxGNMYQ/s1600/image8.gif)
+
+As the scale of a machine learning model increases the performance across tasks improves as well, unlocking new capabilities. Credit: [Google AI, April 2022](https://ai.googleblog.com/2022/04/pathways-language-model-palm-scaling-to.html)
+
+### Using Parsing Expression Grammar (PEG)
+PEG parser generators were popularized by [David Majda](https://github.com/dmajda) with [pegjs](https://github.com/pegjs/pegjs) and later a fork of it that is more actively maintained called [peggy](https://github.com/peggyjs/peggy).
+
+In addition to being theoretically more powerful than context-free, the PEG formalism is much more intuitive and does not introduce ambiguity. It has a few [downsides](https://en.wikipedia.org/wiki/Parsing_expression_grammar#Disadvantages) such as indirect left-recusion, but is a great fit for our use case. 
+
+In my experience, peggy source is much easier to maintain, and also easier to read and explain. Feel free to have a look at the [parser code](https://github.com/datadocs/rose-formatter/blob/master/src/parse-format.peggy#L126).
+
+## Separating parsing from rendering
+As mentioned above, some approaches analyze the format string and produces the output in a single pass. As far as performance is concerned this approach is limiting, because the format string has to be processed every time a new output is desired. For screen rendering this may not be an issue because only a few hundred cells need to be visible, and even a very slow parser could make do. But if you are copying 100 million rows as text it can take a long time to format all of them. This gives a few reasons to decouple format specification parsing from rendering.
+
+* Optimizing code often takes a lot of effort, and can make the code less readable and more difficult to maintain. If rendering and parsing are implemented together, optimizations to the rendering will obfuscate the logic of the parser.
+
+* Having an intermediate format makes it easier to support different specification formats, for example to implement different renderers, such as a basic text renderer, an html renderer, or even a graphic renderer, without having to touch the parser.
+
+* The parsing code will only need to run one time per format, and (usually) one time to render, no matter how large the table is. Additionally, there are only a few distinct data formats, and so the overhead of parsing is roughly constant, and we can relax the optimizations and focus on intelligibility of the parser.
+
+For the more rigorous developers, I have created a [type declarations for the parser output](https://github.com/datadocs/rose-formatter/blob/33c488e165df9c34731c8be4ad8166cc2262b872/src/parse-format.d.ts).
+
+
+## Performance
+Running a quick benchmark we see that the reference TextRenderer implementation provided with [@datadocs/rose-formatter@1.0.0](https://www.npmjs.com/package/@datadocs/rose-formatter) is slightly faster than the default [excel-style-dataformatter](https://www.npmjs.com/package/excel-style-dataformatter) formatting.
+The parser will be run when `new rose.TextRenderer(format)` is called, the result is saved in `formatCache`, and for subsequent calls only the rendering method `.formatNumber(value)` is executed.
+
+```javascript
+const BenchTable = require('benchtable')
+const numbersSuite = new BenchTable('Number formatting', {isTransposed: true});
+const xl1 = require('excel-style-dataformatter');
+const rose = require('@datadocs/rose-formatter');
+const xlf = new xl1();
+const formatCache = {}
+numbersSuite
+  .addFunction("excel-style-dataformatter", (value, format) => {
+    xlf.format(value, 'Number', format);
+  })
+  .addFunction("rose-format render", (value, format) => {
+    return (formatCache[format] || 
+             (formatCache[format] = new rose.TextRenderer(format))
+        ).formatNumber(value);
+  })
+  .addInput('Integer mask', [2398472398, '00-00-00\\.00.00\\/000\\/000'])
+  .addInput('Decimal digits', [Math.PI, '0000.0000000000'])
+  .addInput('Fractions', [Math.PI, '# #/###'])
+  .addInput('Thousand separators', [12345678903, '0,'])
+  .addInput('Scientific notation', [12345678903, '000E+0'])
+  .addInput('Percentage', [12345678903, '0%%%'])
+  .on('cycle', event => {
+    console.log(event.target.toString())
+  })
+  .on('complete', () => {
+    console.log(numbersSuite.table.toString());
+  })
+  .run({async: false})
+```
+
+<table>
+  <tr>
+    <th></th>
+    <th>excel-style-dataformatter</th>
+    <th>rose-format render</th>
+  </tr>
+  <tr>
+    <td>Integer mask</td>
+    <td>261,803 ops/sec</td>
+    <td>689,686 ops/sec</td>
+  </tr>
+  <tr>
+    <td>Decimal digits</td>
+    <td>505,814 ops/sec</td>
+    <td>837,683 ops/sec</td>
+  </tr>
+  <tr>
+    <td>Fractions</td>
+    <td>407,169 ops/sec</td>
+    <td>793,907 ops/sec</td>
+  </tr>
+  <tr>
+    <td>Thousand separators</td>
+    <td>1,308,233 ops/sec</td>
+    <td>1,631,703 ops/sec</td>
+  </tr>
+  <tr>
+    <td>Scientific notation</td>
+    <td>757,928 ops/sec</td>
+    <td>1,164,294 ops/sec</td>
+  </tr>
+  <tr>
+    <td>Percentage</td>
+    <td>1,160,640 ops/sec</td>
+    <td>1,313,979 ops/sec</td>
+  </tr>
+  <tr>
+    <td>yyyy-mm-dd</td>
+    <td>120,363 ops/sec</td>
+    <td>1,257,242 ops/sec</td>
+  </tr>
+  <tr>
+    <td>hh:mm:ss</td>
+    <td>106,129 ops/sec</td>
+    <td>1,254,540 ops/sec</td>
+  </tr>
+  <tr>
+    <td>[hh]:mm:ss</td>
+    <td>178,210 ops/sec</td>
+    <td>1,384,785 ops/sec</td>
+  </tr>
+</table>
+
+![benchmark-result.svg](https://cdn.hashnode.com/res/hashnode/image/upload/v1665588571627/k8H8aIK3l.svg?auto=compress,format&format=webp)
+
+Not bad! Now let's look at a few examples of it in practice.
+
+## Examples
+
+Date formats:
+
+![ex05.gif](https://cdn.hashnode.com/res/hashnode/image/upload/v1665555512841/zNhmJY3P0.gif align="left")
+
+![ex06.gif](https://cdn.hashnode.com/res/hashnode/image/upload/v1665555521300/eQBK9ZQSs.gif align="left")
+
+Conditional formats:
+
+![ex12.gif](https://cdn.hashnode.com/res/hashnode/image/upload/v1665555531561/roE_dsW9w.gif align="left")
+
+
+
+
+Number formats:
+
+![ex01.gif](https://cdn.hashnode.com/res/hashnode/image/upload/v1665555473095/TKWLk_Rzf.gif align="left")
+
+![ex02.gif](https://cdn.hashnode.com/res/hashnode/image/upload/v1665555482515/r4_r6ozVl.gif align="left")
+
+![ex03.gif](https://cdn.hashnode.com/res/hashnode/image/upload/v1665555493879/FpYbtkvCY.gif align="left")
+
+![ex04.gif](https://cdn.hashnode.com/res/hashnode/image/upload/v1665555503128/ATOee-09p.gif align="left")
+
+
+
+# Future work
+The focus of our [@datadocs/rose-formatter@1.0.0](https://www.npmjs.com/package/@datadocs/rose-formatter/v/1.0.0) has been in English. We would like to eventually add Internationalization and Localization, and for that we would welcome any contributors who may be interested.
+
+We would also like to add certain enhancements to style formatting, such as determining colors, alignment, and padding. 
+
+Feel free to open a pull request or report an issue if there is something you would like to see in the package. And if you enjoy using [rose-formatter](https://github.com/datadocs/rose-formatter) please give it a Star on GitHub!
