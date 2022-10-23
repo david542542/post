@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="200" viewport="0 0 800 200">
+<rect fill="#80d0ff" x="0" y="10" height="10" width="800"></rect>
+<circle fill="#a00" r="8" cx="80" cy="15"></circle>
+<circle fill="#a00" r="8" cx="160" cy="15"></circle>
+<circle fill="#a00" r="8" cx="240" cy="15"></circle>
+<circle fill="#a00" r="8" cx="320" cy="15"></circle>
+<circle fill="#a00" r="8" cx="400" cy="15"></circle>
+<circle fill="#a00" r="8" cx="480" cy="15"></circle>
+<circle fill="#00d" r="8" cx="560" cy="15"></circle>
+<circle fill="#00d" r="8" cx="640" cy="15"></circle>
+<circle fill="#00d" r="8" cx="720" cy="15"></circle>
+
+<text x="80"  y="40" dominant-baseline="top" text-anchor="middle">6 BC</text>
+<text x="160" y="40" dominant-baseline="top" text-anchor="middle">5 BC</text>
+<text x="240" y="40" dominant-baseline="top" text-anchor="middle">4 BC</text>
+<text x="320" y="40" dominant-baseline="top" text-anchor="middle">3 BC</text>
+<text x="400" y="40" dominant-baseline="top" text-anchor="middle">2 BC</text>
+<text x="480" y="40" dominant-baseline="top" text-anchor="middle">1 BC</text>
+<text x="560" y="40" dominant-baseline="top" text-anchor="middle">AD 1</text>
+<text x="640" y="40" dominant-baseline="top" text-anchor="middle">AD 2</text>
+<text x="720" y="40" dominant-baseline="top" text-anchor="middle">AD 3</text>
+<text y="60">
+  <tspan x="440" dy="1em">No year zero (and no zero in the roman numbers).</tspan>
+  <tspan x="440" dy="1.5em">4BC was asigned picked as a leap year</tspan>
+  <tspan x="440" dy="1.5em">In AD era, leap years are multiples of 4</tspan>
+</text>
+<text y="60" text-anchor="middle">
+  <tspan x="160" dy="1em">Interestingly, Most agreed date</tspan>
+  <tspan x="160" dy="1.5em">for birth of Christ</tspan>
+  <tspan x="160" dy="1.5em">Around 5BC</tspan>
+</text>
+</svg>
