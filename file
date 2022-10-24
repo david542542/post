@@ -12,8 +12,7 @@ Nowadays any person minimally acquainted with computers will know how a spreadsh
 It is undeniable that Microsoft Excel has been very influential in how it formats data, as shown at [2:42](https://youtu.be/kOO31qFmi9A&t=162s) in the following classic video:
 %[https://youtu.be/kOO31qFmi9A&t=162s]
 
-
-It is undeniable that Microsoft Excel was been very influential, and we are admittedly influenced by its formatting, as shown at [2:42](https://youtu.be/kOO31qFmi9A&t=162s) in the above video. Excel introduced a loose language to describe formats. It is not a formal language, like a regular expression for example – it is documented by examples and not an complete description of how it works.
+We are admittedly influenced by its formatting. Excel introduced a loose language to describe formats. It is not a formal language, like a regular expression for example – it is documented by examples and not an complete description of how it works.
 
 In spite of the difficulty to reproduce it in an elegant algorithm, it is still quite powerful and flexible, and it provides a good fit for our needs, such as:
 
@@ -47,7 +46,7 @@ A [leap second](https://www.timeanddate.com/time/leapseconds.html) is a one-seco
 
 ## Existing candidates on NPM
 
-Let us review a few of the existing formatting libraries available on NPM. [formatter](https://www.npmjs.com/package/formatter) exports a functor that allows fixed-width string interpolation. [d3-time-format](https://www.npmjs.com/package/d3-time-format) is another great solution that provides fixed-width formatting according to the standard C format description format. [d3-format](https://www.npmjs.com/package/d3-format) supports the Python 3’s format specification. numeral allows the formatting numbers in various locales and formats, but does not support dates or other non-numeric types. The two best candidates we found were the following:
+Let us review a few of the existing formatting libraries available on NPM. [formatter](https://www.npmjs.com/package/formatter) exports a functor that allows fixed-width string interpolation. [d3-time-format](https://www.npmjs.com/package/d3-time-format) is another great solution that provides fixed-width formatting according to the standard C format description format. [d3-format](https://www.npmjs.com/package/d3-format) supports the Python 3’s format specification. [numeral](https://github.com/adamwdraper/Numeral-js) allows the formatting of numbers in various locales and formats, but does not support dates or other non-numeric types. The two best candidates we found were the following:
 
 [moment](https://www.npmjs.com/package/moment) supports many operations for date and time, and is extremely popular with over 20 million downloads per month. It has nice [formatting support](https://momentjs.com/docs/#/displaying/format/), with its own custom format, e.g. being able to format days as ordinal: `moment().format("Do [of] MMMM")` gives `2nd of October`. The package itself is quite large, coming in at close to 5 MB.
 
@@ -83,7 +82,7 @@ Some of these packages could, arguably, have been better than Excel in some resp
 
 # Our approach
 
-As the examples show, each feature may have a different reasonable conventions, and these features can be combined together in numerous ways as well. Creating a fully-compatible formatting library would be an arduous task, and even mature libraries such as OpenOffice or Google Sheets will exhibit their own differences. I wouldn't be surprised if some of its traits were included as a way to detect unauthorized copy, following the ideas of Trap Streets for maps, or Fictitious entries for dictionaries or encyclopedias. Our focus has been to focus on the main features and allow for the package to evolve on its own.
+As the examples show, each feature may have different reasonable conventions, and these features can be combined together in numerous ways as well. Creating a fully-compatible formatting library would be an arduous task, and even mature libraries such as OpenOffice or Google Sheets will exhibit their own differences. I wouldn't be surprised if some of its traits were included as a way to detect unauthorized copy, following the ideas of Trap Streets for maps, or Fictitious entries for dictionaries or encyclopedias. Our focus has been to focus on the main features and allow for the package to evolve on its own.
 
 ## Self-criticism
 A joke about standardization that I always tell:
