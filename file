@@ -221,7 +221,7 @@ Not bad! Now let's look at a few examples of it in practice.
 %[https://codepen.io/alexandre-felipe/pen/vYrBGjr]
 
 # Future work
-The focus of our [@datadocs/rose-formatter@1.0.0](https://www.npmjs.com/package/@datadocs/rose-formatter/v/1.0.0) has been in English. We would like to eventually add Internationalization and Localization, and for that we would welcome any contributors who may be interested.
+The focus of [@datadocs/rose-formatter@1.0.0](https://www.npmjs.com/package/@datadocs/rose-formatter/v/1.0.0) has been in English. We would like to eventually add Internationalization and Localization, and for that we would welcome any contributors who may be interested.
 
 We would also like to add certain enhancements to style formatting, such as determining colors, alignment, and padding. 
 
